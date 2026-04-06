@@ -98,10 +98,14 @@
     }
 
     /* ═══════════════════════════════════════════
-       SUN / MOON / CLOUDS
+       CELESTIAL BODIES (continuous movement)
+       Sun and moon traverse the screen smoothly
        ═══════════════════════════════════════════ */
-    let celestialBody = null; // sun or moon
+    let celestialBody = null;
     let clouds = [];
+
+    const CELESTIAL_CROSS_TIME = 6 * BG_INTERVAL;
+    let cycleStart = Date.now();
 
     function isDaytime() {
         return ['morning', 'noon', 'afternoon'].includes(currentPeriod);
@@ -111,13 +115,15 @@
         const w = celestialCanvas.width;
         const h = celestialCanvas.height;
 
+        const totalCycle = CELESTIAL_CROSS_TIME;
+        const elapsed = Date.now() - cycleStart;
+        const progress = (elapsed % totalCycle) / totalCycle;
+
         const isDay = isDaytime();
 
         if (isDay) {
-            // Sun: arc from bottom-left to bottom-right across top
-            const progress = getPeriodProgress();
-            const sunX = w * 0.1 + w * 0.8 * progress;
-            const sunY = h * 0.35 - Math.sin(progress * Math.PI) * h * 0.25;
+            const sunX = -60 + (w + 120) * progress;
+            const sunY = h * 0.35 - Math.sin(progress * Math.PI) * h * 0.28;
             celestialBody = {
                 type: 'sun',
                 x: sunX,
@@ -126,86 +132,66 @@
                 glowR: 80
             };
         } else {
-            // Moon: visible at night/evening/dawn, arc across sky
-            if (currentPeriod === 'night') {
-                const progress = getPeriodProgress();
-                const moonX = w * 0.15 + w * 0.7 * progress;
-                const moonY = h * 0.25 - Math.sin(progress * Math.PI) * h * 0.18;
-                celestialBody = {
-                    type: 'moon',
-                    x: moonX,
-                    y: moonY,
-                    r: 25
-                };
-            } else if (currentPeriod === 'dawn') {
-                const progress = getPeriodProgress();
-                const moonX = w * 0.7 + w * 0.3 * progress;
-                const moonY = h * 0.2 - Math.sin(progress * Math.PI) * h * 0.12;
-                celestialBody = {
-                    type: 'moon',
-                    x: moonX,
-                    y: moonY,
-                    r: 22
-                };
-            } else if (currentPeriod === 'evening') {
-                const progress = getPeriodProgress();
-                const moonX = w * 0.05 + w * 0.4 * progress;
-                const moonY = h * 0.3 - Math.sin(progress * Math.PI) * h * 0.15;
-                celestialBody = {
-                    type: 'moon',
-                    x: moonX,
-                    y: moonY,
-                    r: 24
-                };
-            }
+            const moonX = -50 + (w + 100) * progress;
+            const moonY = h * 0.28 - Math.sin(progress * Math.PI) * h * 0.2;
+            celestialBody = {
+                type: 'moon',
+                x: moonX,
+                y: moonY,
+                r: 25
+            };
         }
+    }
 
-        // Clouds: count and darkness depends on weather + period
-        if (currentWeather === 'storm' || currentWeather === 'rain' || currentWeather === 'drizzle') {
-            if (clouds.length === 0) {
-                const cloudCount = currentWeather === 'storm' ? 15 : currentWeather === 'rain' ? 12 : 8;
-                for (let i = 0; i < cloudCount; i++) {
-                    clouds.push({
-                        x: Math.random() * w,
-                        y: Math.random() * h * 0.4 + h * 0.05,
-                        w: Math.random() * 180 + 100,
-                        h: Math.random() * 40 + 25,
-                        speed: Math.random() * 0.5 + 0.3,
-                        puffs: generateCloudPuffs(Math.random() * 180 + 100, Math.random() * 40 + 25),
-                        alpha: currentWeather === 'storm' ? 0.18 : 0.1
-                    });
+    function ensureClouds(w, h) {
+        if (clouds.length > 0) return;
+        if (clouds.length === 0) {
+            if (currentWeather === 'storm') {
+                for (let i = 0; i < 15; i++) {
+                    clouds.push(createCloud(w, h, 0.18));
                 }
-            }
-        } else if (currentPeriod === 'night' || currentPeriod === 'evening') {
-            clouds = [];
-        } else {
-            if (clouds.length === 0) {
+            } else if (currentWeather === 'rain') {
+                for (let i = 0; i < 12; i++) {
+                    clouds.push(createCloud(w, h, 0.1));
+                }
+            } else if (currentWeather === 'drizzle') {
+                for (let i = 0; i < 8; i++) {
+                    clouds.push(createCloud(w, h, 0.1));
+                }
+            } else if (currentWeather === 'fog') {
+                // Fog handles its own clouds, but add a few wispy ones
+                for (let i = 0; i < 4; i++) {
+                    clouds.push(createCloud(w, h, 0.05));
+                }
+            } else {
                 for (let i = 0; i < 5; i++) {
-                    clouds.push({
-                        x: Math.random() * w,
-                        y: Math.random() * h * 0.35 + h * 0.05,
-                        w: Math.random() * 120 + 80,
-                        h: Math.random() * 30 + 20,
-                        speed: Math.random() * 0.3 + 0.15,
-                        puffs: generateCloudPuffs(Math.random() * 120 + 80, Math.random() * 30 + 20),
-                        alpha: 0.06
-                    });
+                    clouds.push(createCloud(w, h, 0.06));
                 }
             }
         }
     }
 
-    function generateCloudPuffs(w, h) {
+    function createCloud(w, h, alpha) {
+        const cw = Math.random() * 180 + 100;
+        const ch = Math.random() * 40 + 25;
         const puffs = [];
-        const count = Math.floor(w / 25);
+        const count = Math.floor(cw / 25);
         for (let i = 0; i < count; i++) {
             puffs.push({
-                ox: (i / count) * w + (Math.random() - 0.5) * 20,
-                oy: (Math.random() - 0.5) * h * 0.5,
+                ox: (i / count) * cw + (Math.random() - 0.5) * 20,
+                oy: (Math.random() - 0.5) * ch * 0.5,
                 r: Math.random() * 18 + 15
             });
         }
-        return puffs;
+        return {
+            x: Math.random() * (w + 200) - 100,
+            y: Math.random() * h * 0.4 + h * 0.05,
+            w: cw,
+            h: ch,
+            speed: Math.random() * 0.5 + 0.3,
+            puffs: puffs,
+            alpha: alpha
+        };
     }
 
     function drawCelestial() {
@@ -214,7 +200,6 @@
         const h = celestialCanvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        // Sun
         if (celestialBody && celestialBody.type === 'sun') {
             const sun = celestialBody;
 
@@ -235,10 +220,7 @@
                 const angle = (i / 12) * Math.PI * 2 + Date.now() * 0.0003;
                 ctx.beginPath();
                 ctx.moveTo(sun.x, sun.y);
-                ctx.lineTo(
-                    sun.x + Math.cos(angle) * sun.glowR,
-                    sun.y + Math.sin(angle) * sun.glowR
-                );
+                ctx.lineTo(sun.x + Math.cos(angle) * sun.glowR, sun.y + Math.sin(angle) * sun.glowR);
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#fbbf24';
                 ctx.stroke();
@@ -256,7 +238,6 @@
             ctx.fill();
         }
 
-        // Moon
         if (celestialBody && celestialBody.type === 'moon') {
             const moon = celestialBody;
 
@@ -278,28 +259,25 @@
             // Crescent shadow
             ctx.beginPath();
             ctx.arc(moon.x + 8, moon.y - 3, moon.r - 2, 0, Math.PI * 2);
-            const bg = currentPeriod === 'night' ? '#020308' : '#050a12';
-            ctx.fillStyle = bg;
+            ctx.fillStyle = currentPeriod === 'night' ? '#020308' : '#050a12';
             ctx.globalAlpha = 0.6;
             ctx.fill();
             ctx.globalAlpha = 1;
         }
 
         // Clouds
+        ensureClouds(w, h);
         if (clouds.length > 0) {
             for (const c of clouds) {
                 c.x += c.speed;
                 if (c.x > w + c.w) c.x = -c.w;
 
                 for (const p of c.puffs) {
-                    // Cloud color based on weather
                     let cr, cg, cb;
                     if (currentWeather === 'storm') {
                         cr = 45; cg = 45; cb = 55;
                     } else if (currentWeather === 'rain' || currentWeather === 'drizzle') {
                         cr = 80; cg = 85; cb = 95;
-                    } else if (currentPeriod === 'night' || currentPeriod === 'evening') {
-                        cr = 30; cg = 32; cb = 40;
                     } else {
                         cr = 160; cg = 155; cb = 145;
                     }
@@ -313,11 +291,6 @@
             }
             ctx.globalAlpha = 1;
         }
-    }
-
-    let _periodStartTime = Date.now();
-    function getPeriodProgress() {
-        return Math.min(1, (Date.now() - _periodStartTime) / BG_INTERVAL);
     }
 
     /* ═══════════════════════════════════════════
@@ -382,7 +355,7 @@
     function pickWeather() {
         currentWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
         weatherLabel.textContent = weatherNames[currentWeather] || '';
-        clouds = []; // Recalculate clouds with new weather
+        clouds = [];
         initWeather();
     }
 
@@ -565,6 +538,7 @@
        MAIN LOOP
        ═══════════════════════════════════════════ */
     function loop(time) {
+        updateCelestial();
         drawStars(time);
         drawCelestial();
         drawParticles();
@@ -581,18 +555,13 @@
        INIT
        ═══════════════════════════════════════════ */
     updateBackground();
-    _periodStartTime = Date.now();
     initStars();
     initParticles();
     pickWeather();
+    updateCelestial();
 
     setInterval(updateBackground, 500);
-
-    // Periodic cloud refresh so they update when weather changes
-    setInterval(() => {
-        clouds = [];
-        updateCelestial();
-    }, 15000);
+    setInterval(() => { clouds = []; updateCelestial(); }, 15000);
 
     function scheduleWeather() {
         const delay = (120 + Math.random() * 180) * 1000;
@@ -612,10 +581,8 @@
         updateCelestial();
     });
 
-    // Init celestial canvas
     celestialCanvas.width = window.innerWidth;
     celestialCanvas.height = window.innerHeight;
-    updateCelestial();
 
     requestAnimationFrame(loop);
 

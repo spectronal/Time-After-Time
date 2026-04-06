@@ -1,13 +1,16 @@
-# DEVLOG 0.3 — Time After Time
+# DEVLOG 0.4 — Time After Time
 
-## Update: Celestials
+## Celestials: Sol, Lua e Nuvens
 
-#### Sol, Lua e Nuvens
-O céu agora tem elementos celestiais:
-- **Sol**: aparece durante o dia (morning, noon, afternoon), fazendo um arco pelo céu com glow dourado e raios girando suavemente
-- **Lua**: surge à noite, no amanhecer e no anoitecer, com formato de crescente e brilho azulado
-- **Nuvens**: mudam a cor e quantidade de acordo com o clima e período
-  - **Storm**: nuvens escuras, quase pretas, cheias e pesadas
-  - **Rain/Drizzle**: cinza médio, em mais quantidade
+### O que mudou
+
+Sol e lua agora atravessam a tela continuamente em arco — sem teleporte.
+
+- **Sol**: nasce pela esquerda, sobe em arco pelo céu e desce pela direita com glow dourado e raios girando
+- **Lua**: faz o mesmo trajeto durante a noite, com formato de crescente e brilho azulado
+- **Nuvens**: mudam cor e quantidade conforme o clima
+  - **Storm**: nuvens escuras, quase pretas, pesadas
+  - **Rain/Drizzle**: cinza médio, mais quantidade
   - **Dia limpo**: nuvens claras e esparsas
-  - **Noite**: quase invisíveis, sombrias
+
+O ciclo completo de travessia leva o equivalente a 6 trocas de período (18 min). A posição é atualizada a cada frame via `requestAnimationFrame` — movimento suave, nada de tp.
