@@ -8,19 +8,41 @@
 </head>
 <body>
 
+    <div id="bgLayer"></div>
+    <canvas id="starsLayer"></canvas>
+    <canvas id="particleCanvas"></canvas>
+    <canvas id="weatherCanvas"></canvas>
+    <div id="timeOverlay"></div>
+
+    <div class="game-clock">
+        <div id="gameClockTime">00:00:00</div>
+        <div class="clock-real" id="realClockTime">00:00:00</div>
+        <div class="period-label">
+            <span id="periodLabel">night</span>
+            <span id="weatherLabel"></span>
+        </div>
+    </div>
+
+    <div class="time-cycle">
+        <div class="time-dot" data-period="dawn"><span class="dot-label">Dawn</span></div>
+        <div class="time-dot" data-period="morning"><span class="dot-label">Morning</span></div>
+        <div class="time-dot" data-period="noon"><span class="dot-label">Noon</span></div>
+        <div class="time-dot" data-period="afternoon"><span class="dot-label">Afternoon</span></div>
+        <div class="time-dot" data-period="evening"><span class="dot-label">Evening</span></div>
+        <div class="time-dot" data-period="night"><span class="dot-label">Night</span></div>
+    </div>
+
     <div class="app">
 
-        <!-- Center: Counter + Button -->
         <div class="main">
             <h1 id="gameTitle">Time After Time</h1>
             <div id="counter">0</div>
-            <p class="subtitle">seconds slipping by</p>
+            <p class="subtitle">seconds slipping by...</p>
             <button id="btn" class="click-btn">
                 <span>One more</span>
             </button>
         </div>
 
-        <!-- Right: Upgrades Panel -->
         <div class="side-panel">
             <div class="panel-header">
                 <h2>Exchanges</h2>
@@ -39,6 +61,7 @@
     <script src="Functions/playerData.js"></script>
     <script src="Functions/save.js"></script>
     <script src="Functions/upgrades.js"></script>
+    <script src="timeBackground.js"></script>
     <script src="main.js"></script>
 
 </body>

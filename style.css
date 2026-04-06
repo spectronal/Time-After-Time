@@ -9,11 +9,88 @@
 
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background-color: #0a0a0a;
     color: #e5e5e5;
     min-height: 100vh;
     overflow: hidden;
     user-select: none;
+}
+
+/* ══════════════════════════════════════════
+   DYNAMIC BACKGROUND LAYER
+   Smooth gradient that shifts with real time
+   ══════════════════════════════════════════ */
+#bgLayer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    transition: background 4s ease;
+}
+
+/* Stars overlay (visible at night) */
+#starsLayer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 4s ease;
+}
+
+/* Particle canvas for floating time dust */
+#particleCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Scanline / clock overlay */
+#timeOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+    );
+}
+
+/* ══════════════════════════════════════════
+   GAME CLOCK (top-left corner)
+   ══════════════════════════════════════════ */
+.game-clock {
+    position: fixed;
+    top: 16px; left: 20px;
+    z-index: 20;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    font-family: 'Courier New', monospace;
+    color: rgba(255, 255, 255, 0.25);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.game-clock .clock-real {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.15);
+    margin-top: 2px;
+}
+
+.game-clock .period-label {
+    display: block;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.12);
+    margin-top: 4px;
 }
 
 /* ══════════════════════════════════════════
@@ -22,6 +99,8 @@ body {
 .app {
     display: flex;
     height: 100vh;
+    position: relative;
+    z-index: 10;
 }
 
 /* ══════════════════════════════════════════
@@ -40,10 +119,11 @@ body {
 #gameTitle {
     font-size: 14px;
     font-weight: 600;
-    letter-spacing: 4px;
+    letter-spacing: 6px;
     text-transform: uppercase;
-    color: #555;
+    color: rgba(255, 255, 255, 0.35);
     margin-bottom: 24px;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.08);
 }
 
 #counter {
@@ -51,7 +131,8 @@ body {
     font-weight: 700;
     color: #fff;
     line-height: 1;
-    transition: transform 0.08s ease;
+    transition: transform 0.08s ease, text-shadow 0.3s ease;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
 }
 
 #counter.bump {
@@ -60,38 +141,57 @@ body {
 
 .subtitle {
     font-size: 13px;
-    color: #444;
+    color: rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
     letter-spacing: 3px;
     margin-bottom: 16px;
 }
 
-/* Main Click Button */
+/* Main Click Button - clock face inspired */
 .click-btn {
     width: 140px;
     height: 140px;
     border-radius: 50%;
-    border: 2px solid #1a1a1a;
-    background: linear-gradient(145deg, #141414, #0e0e0e);
-    color: #ccc;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    background: radial-gradient(circle at 35% 35%, rgba(30, 30, 30, 0.9), rgba(10, 10, 10, 0.95));
+    color: rgba(255, 255, 255, 0.7);
     font-size: 16px;
     font-weight: 600;
     letter-spacing: 3px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     margin-top: 20px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.click-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2px; height: 45%;
+    background: linear-gradient(to top, transparent, rgba(255, 255, 255, 0.15));
+    transform-origin: bottom center;
+    transform: translateX(-50%) translateY(-100%);
+    animation: clockHand 20s linear infinite;
+    border-radius: 1px;
+}
+
+@keyframes clockHand {
+    to { transform: translateX(-50%) translateY(-100%) rotate(360deg); }
 }
 
 .click-btn:hover {
-    border-color: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.15);
     color: #fff;
-    background: linear-gradient(145deg, #191919, #111);
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.05), inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .click-btn:active {
     transform: scale(0.95);
-    border-color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.5);
     color: #fff;
 }
 
@@ -114,13 +214,60 @@ body {
 }
 
 /* ══════════════════════════════════════════
+   TIME PERIOD INDICATOR DOTS
+   Small dots along the edge showing time cycle
+   ══════════════════════════════════════════ */
+.time-cycle {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.time-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 1s ease;
+    position: relative;
+}
+
+.time-dot.active {
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.time-dot .dot-label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    transition: color 1s ease;
+}
+
+.time-dot.active .dot-label {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ══════════════════════════════════════════
    RIGHT SIDE PANEL
    ══════════════════════════════════════════ */
 .side-panel {
     width: 300px;
     min-width: 300px;
-    background: #0e0e0e;
-    border-left: 1px solid #1a1a1a;
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -131,7 +278,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 20px 20px 16px;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .panel-header h2 {
@@ -139,7 +286,7 @@ body {
     font-weight: 600;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #666;
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .save-btn {
@@ -147,9 +294,9 @@ body {
     font-weight: 600;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: #555;
+    color: rgba(255, 255, 255, 0.25);
     background: transparent;
-    border: 1px solid #222;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 6px 14px;
     border-radius: 6px;
     cursor: pointer;
@@ -166,7 +313,7 @@ body {
     display: flex;
     gap: 0;
     margin: 12px 16px 0;
-    background: #111;
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 8px;
     padding: 3px;
 }
@@ -178,7 +325,7 @@ body {
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #555;
+    color: rgba(255, 255, 255, 0.2);
     background: transparent;
     border: none;
     border-radius: 6px;
@@ -187,12 +334,12 @@ body {
 }
 
 .tab:hover {
-    color: #999;
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .tab.active {
-    background: #1a1a1a;
-    color: #e5e5e5;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 /* Upgrade List */
@@ -214,14 +361,16 @@ body {
 }
 
 .upgrade-list::-webkit-scrollbar-thumb {
-    background: #222;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
 
 /* Upgrade Card */
 .upgrade-card {
-    background: #131313;
-    border: 1px solid #1a1a1a;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 10px;
     padding: 14px 16px;
     cursor: pointer;
@@ -237,14 +386,14 @@ body {
     left: 0;
     width: 3px;
     height: 100%;
-    background: #dc2626;
+    background: rgba(220, 38, 38, 0.7);
     opacity: 0;
     transition: opacity 0.15s ease;
 }
 
 .upgrade-card:hover {
-    border-color: #2a2a2a;
-    background: #161616;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(30, 30, 30, 0.7);
 }
 
 .upgrade-card:hover::before {
@@ -252,7 +401,7 @@ body {
 }
 
 .upgrade-card.cant-afford {
-    opacity: 0.35;
+    opacity: 0.3;
     pointer-events: none;
 }
 
@@ -266,19 +415,19 @@ body {
 .upgrade-card .card-name {
     font-size: 13px;
     font-weight: 600;
-    color: #ddd;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .upgrade-card .card-qty {
     font-size: 10px;
-    color: #555;
+    color: rgba(255, 255, 255, 0.15);
     font-weight: 600;
     letter-spacing: 0.5px;
 }
 
 .upgrade-card .card-desc {
     font-size: 11px;
-    color: #555;
+    color: rgba(255, 255, 255, 0.2);
     margin-bottom: 8px;
 }
 
@@ -291,12 +440,12 @@ body {
 .upgrade-card .card-cost {
     font-size: 12px;
     font-weight: 600;
-    color: #dc2626;
+    color: rgba(220, 38, 38, 0.7);
 }
 
 .upgrade-card .card-effect {
     font-size: 10px;
-    color: #4a4a4a;
+    color: rgba(255, 255, 255, 0.15);
     letter-spacing: 0.5px;
 }
 
@@ -308,9 +457,11 @@ body {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%) translateY(20px);
-    background: #181818;
-    border: 1px solid #222;
-    color: #ddd;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.6);
     padding: 10px 24px;
     border-radius: 8px;
     font-size: 12px;
