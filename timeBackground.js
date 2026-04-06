@@ -1,21 +1,25 @@
-
 (function() {
 
-
+    /* ═══════════════════════════════════════════
+       PERIOD CYCLING (every 3 min)
+       ═══════════════════════════════════════════ */
     const periodOrder = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night'];
     let currentPeriodIndex = -1;
-    const BG_INTERVAL = 3 * 60 * 1000; // 3m
+    const BG_INTERVAL = 3 * 60 * 1000;
     let nextBgChange = Date.now();
 
     const bgLayer = document.getElementById('bgLayer');
     const starsCanvas = document.getElementById('starsLayer');
     const particleCanvas = document.getElementById('particleCanvas');
     const weatherCanvas = document.getElementById('weatherCanvas');
+    const celestialCanvas = document.getElementById('celestialCanvas');
     const gameClockEl = document.getElementById('gameClockTime');
     const realClockEl = document.getElementById('realClockTime');
     const periodLabel = document.getElementById('periodLabel');
     const weatherLabel = document.getElementById('weatherLabel');
     const dots = document.querySelectorAll('.time-dot');
+
+    let currentPeriod = '';
 
     function applyGradient(period) {
         const gradients = {
@@ -31,15 +35,15 @@
 
     function advancePeriod() {
         currentPeriodIndex = (currentPeriodIndex + 1) % periodOrder.length;
-        const period = periodOrder[currentPeriodIndex];
-        applyGradient(period);
+        currentPeriod = periodOrder[currentPeriodIndex];
+        applyGradient(currentPeriod);
 
-        const isNight = period === 'night' || period === 'evening' || period === 'dawn';
+        const isNight = currentPeriod === 'night' || currentPeriod === 'evening' || currentPeriod === 'dawn';
         starsCanvas.style.opacity = isNight ? '1' : '0';
 
-        periodLabel.textContent = period;
+        periodLabel.textContent = currentPeriod;
         dots.forEach(d => {
-            d.classList.toggle('active', d.dataset.period === period);
+            d.classList.toggle('active', d.dataset.period === currentPeriod);
         });
     }
 
@@ -58,6 +62,9 @@
         }
     }
 
+    /* ═══════════════════════════════════════════
+       STARS
+       ═══════════════════════════════════════════ */
     let stars = [];
     function initStars() {
         starsCanvas.width = window.innerWidth;
@@ -90,6 +97,232 @@
         ctx.globalAlpha = 1;
     }
 
+    /* ═══════════════════════════════════════════
+       SUN / MOON / CLOUDS
+       ═══════════════════════════════════════════ */
+    let celestialBody = null; // sun or moon
+    let clouds = [];
+
+    function isDaytime() {
+        return ['morning', 'noon', 'afternoon'].includes(currentPeriod);
+    }
+
+    function updateCelestial() {
+        const w = celestialCanvas.width;
+        const h = celestialCanvas.height;
+
+        const isDay = isDaytime();
+
+        if (isDay) {
+            // Sun: arc from bottom-left to bottom-right across top
+            const progress = getPeriodProgress();
+            const sunX = w * 0.1 + w * 0.8 * progress;
+            const sunY = h * 0.35 - Math.sin(progress * Math.PI) * h * 0.25;
+            celestialBody = {
+                type: 'sun',
+                x: sunX,
+                y: sunY,
+                r: 35,
+                glowR: 80
+            };
+        } else {
+            // Moon: visible at night/evening/dawn, arc across sky
+            if (currentPeriod === 'night') {
+                const progress = getPeriodProgress();
+                const moonX = w * 0.15 + w * 0.7 * progress;
+                const moonY = h * 0.25 - Math.sin(progress * Math.PI) * h * 0.18;
+                celestialBody = {
+                    type: 'moon',
+                    x: moonX,
+                    y: moonY,
+                    r: 25
+                };
+            } else if (currentPeriod === 'dawn') {
+                const progress = getPeriodProgress();
+                const moonX = w * 0.7 + w * 0.3 * progress;
+                const moonY = h * 0.2 - Math.sin(progress * Math.PI) * h * 0.12;
+                celestialBody = {
+                    type: 'moon',
+                    x: moonX,
+                    y: moonY,
+                    r: 22
+                };
+            } else if (currentPeriod === 'evening') {
+                const progress = getPeriodProgress();
+                const moonX = w * 0.05 + w * 0.4 * progress;
+                const moonY = h * 0.3 - Math.sin(progress * Math.PI) * h * 0.15;
+                celestialBody = {
+                    type: 'moon',
+                    x: moonX,
+                    y: moonY,
+                    r: 24
+                };
+            }
+        }
+
+        // Clouds: count and darkness depends on weather + period
+        if (currentWeather === 'storm' || currentWeather === 'rain' || currentWeather === 'drizzle') {
+            if (clouds.length === 0) {
+                const cloudCount = currentWeather === 'storm' ? 15 : currentWeather === 'rain' ? 12 : 8;
+                for (let i = 0; i < cloudCount; i++) {
+                    clouds.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h * 0.4 + h * 0.05,
+                        w: Math.random() * 180 + 100,
+                        h: Math.random() * 40 + 25,
+                        speed: Math.random() * 0.5 + 0.3,
+                        puffs: generateCloudPuffs(Math.random() * 180 + 100, Math.random() * 40 + 25),
+                        alpha: currentWeather === 'storm' ? 0.18 : 0.1
+                    });
+                }
+            }
+        } else if (currentPeriod === 'night' || currentPeriod === 'evening') {
+            clouds = [];
+        } else {
+            if (clouds.length === 0) {
+                for (let i = 0; i < 5; i++) {
+                    clouds.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h * 0.35 + h * 0.05,
+                        w: Math.random() * 120 + 80,
+                        h: Math.random() * 30 + 20,
+                        speed: Math.random() * 0.3 + 0.15,
+                        puffs: generateCloudPuffs(Math.random() * 120 + 80, Math.random() * 30 + 20),
+                        alpha: 0.06
+                    });
+                }
+            }
+        }
+    }
+
+    function generateCloudPuffs(w, h) {
+        const puffs = [];
+        const count = Math.floor(w / 25);
+        for (let i = 0; i < count; i++) {
+            puffs.push({
+                ox: (i / count) * w + (Math.random() - 0.5) * 20,
+                oy: (Math.random() - 0.5) * h * 0.5,
+                r: Math.random() * 18 + 15
+            });
+        }
+        return puffs;
+    }
+
+    function drawCelestial() {
+        const ctx = celestialCanvas.getContext('2d');
+        const w = celestialCanvas.width;
+        const h = celestialCanvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // Sun
+        if (celestialBody && celestialBody.type === 'sun') {
+            const sun = celestialBody;
+
+            // Glow
+            const glow = ctx.createRadialGradient(sun.x, sun.y, sun.r * 0.5, sun.x, sun.y, sun.glowR);
+            glow.addColorStop(0, 'rgba(255, 200, 80, 0.25)');
+            glow.addColorStop(0.5, 'rgba(255, 180, 50, 0.08)');
+            glow.addColorStop(1, 'rgba(255, 150, 30, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.glowR, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Rays
+            ctx.save();
+            ctx.globalAlpha = 0.08;
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 + Date.now() * 0.0003;
+                ctx.beginPath();
+                ctx.moveTo(sun.x, sun.y);
+                ctx.lineTo(
+                    sun.x + Math.cos(angle) * sun.glowR,
+                    sun.y + Math.sin(angle) * sun.glowR
+                );
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Sun body
+            const bodyGrad = ctx.createRadialGradient(sun.x - 5, sun.y - 5, 0, sun.x, sun.y, sun.r);
+            bodyGrad.addColorStop(0, '#fff5cc');
+            bodyGrad.addColorStop(0.5, '#fbbf24');
+            bodyGrad.addColorStop(1, '#d97706');
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.r, 0, Math.PI * 2);
+            ctx.fillStyle = bodyGrad;
+            ctx.fill();
+        }
+
+        // Moon
+        if (celestialBody && celestialBody.type === 'moon') {
+            const moon = celestialBody;
+
+            // Glow
+            const glow = ctx.createRadialGradient(moon.x, moon.y, moon.r * 0.3, moon.x, moon.y, moon.r * 3);
+            glow.addColorStop(0, 'rgba(180, 200, 255, 0.15)');
+            glow.addColorStop(1, 'rgba(150, 170, 220, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(moon.x, moon.y, moon.r * 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Moon body
+            ctx.beginPath();
+            ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI * 2);
+            ctx.fillStyle = '#c8d8f0';
+            ctx.fill();
+
+            // Crescent shadow
+            ctx.beginPath();
+            ctx.arc(moon.x + 8, moon.y - 3, moon.r - 2, 0, Math.PI * 2);
+            const bg = currentPeriod === 'night' ? '#020308' : '#050a12';
+            ctx.fillStyle = bg;
+            ctx.globalAlpha = 0.6;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // Clouds
+        if (clouds.length > 0) {
+            for (const c of clouds) {
+                c.x += c.speed;
+                if (c.x > w + c.w) c.x = -c.w;
+
+                for (const p of c.puffs) {
+                    // Cloud color based on weather
+                    let cr, cg, cb;
+                    if (currentWeather === 'storm') {
+                        cr = 45; cg = 45; cb = 55;
+                    } else if (currentWeather === 'rain' || currentWeather === 'drizzle') {
+                        cr = 80; cg = 85; cb = 95;
+                    } else if (currentPeriod === 'night' || currentPeriod === 'evening') {
+                        cr = 30; cg = 32; cb = 40;
+                    } else {
+                        cr = 160; cg = 155; cb = 145;
+                    }
+
+                    ctx.globalAlpha = c.alpha;
+                    ctx.beginPath();
+                    ctx.arc(c.x + p.ox, c.y + p.oy, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    let _periodStartTime = Date.now();
+    function getPeriodProgress() {
+        return Math.min(1, (Date.now() - _periodStartTime) / BG_INTERVAL);
+    }
+
+    /* ═══════════════════════════════════════════
+       FLOATING PARTICLES
+       ═══════════════════════════════════════════ */
     let particles = [];
     function initParticles() {
         particleCanvas.width = window.innerWidth;
@@ -128,6 +361,9 @@
         ctx.globalAlpha = 1;
     }
 
+    /* ═══════════════════════════════════════════
+       WEATHER SYSTEM
+       ═══════════════════════════════════════════ */
     const weatherTypes = ['none', 'none', 'none', 'drizzle', 'rain', 'rain', 'storm', 'fog', 'snow'];
     const weatherNames = {
         none: '',
@@ -146,6 +382,7 @@
     function pickWeather() {
         currentWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
         weatherLabel.textContent = weatherNames[currentWeather] || '';
+        clouds = []; // Recalculate clouds with new weather
         initWeather();
     }
 
@@ -285,6 +522,9 @@
         }
     }
 
+    /* ═══════════════════════════════════════════
+       GAME CLOCK
+       ═══════════════════════════════════════════ */
     function formatGameTime(secs) {
         const total = Math.floor(secs);
         if (total >= 31536000000) {
@@ -321,8 +561,12 @@
             String(s).padStart(2, '0');
     }
 
+    /* ═══════════════════════════════════════════
+       MAIN LOOP
+       ═══════════════════════════════════════════ */
     function loop(time) {
         drawStars(time);
+        drawCelestial();
         drawParticles();
         drawWeather();
 
@@ -333,12 +577,22 @@
         requestAnimationFrame(loop);
     }
 
+    /* ═══════════════════════════════════════════
+       INIT
+       ═══════════════════════════════════════════ */
     updateBackground();
+    _periodStartTime = Date.now();
     initStars();
     initParticles();
     pickWeather();
 
     setInterval(updateBackground, 500);
+
+    // Periodic cloud refresh so they update when weather changes
+    setInterval(() => {
+        clouds = [];
+        updateCelestial();
+    }, 15000);
 
     function scheduleWeather() {
         const delay = (120 + Math.random() * 180) * 1000;
@@ -352,8 +606,16 @@
     window.addEventListener('resize', () => {
         initStars();
         initParticles();
-        initWeather();
+        celestialCanvas.width = window.innerWidth;
+        celestialCanvas.height = window.innerHeight;
+        clouds = [];
+        updateCelestial();
     });
+
+    // Init celestial canvas
+    celestialCanvas.width = window.innerWidth;
+    celestialCanvas.height = window.innerHeight;
+    updateCelestial();
 
     requestAnimationFrame(loop);
 

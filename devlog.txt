@@ -1,47 +1,13 @@
-# DEVLOG — Time After Time
+# DEVLOG 0.3 — Time After Time
 
-## Update: Atmosfera + Clima Dinâmico
+## Update: Celestials
 
-### O que mudou
-
-O Time After Time ganhou uma overhaul visual completa. A ideia era que o jogo passasse a sensação de que o tempo realmente passa — e o fundo não fosse mais só um `#0a0a0a` parado no escuro.
-
-#### Background que cicla entre períodos
-O gradient de fundo agora muda automaticamente a cada 3 minutos entre 6 períodos: dawn → morning → noon → afternoon → evening → night. Cada um tem cores mais escuras, como se tivesse uma camada preta por cima — nada muito brilhante, tudo meio submerso.
-
-#### Estrelas
-Quando o período é night, evening ou dawn, aparece um campo de estrelas com twinkle suave. De dia, elas somem naturalmente.
-
-#### Partículas ("time dust")
-Partículas flutuantes ficam subindo pela tela o tempo todo — tipo poeira de tempo, aqueles segundos que escapam por aí.
-
-#### Sistema de clima
-Clima aleatório muda a cada 2-5 minutos:
-- **Drizzle**: garoa leve, gotas caindo devagar
-- **Rain**: chuva normal com vento
-- **Storm**: tempestade pesada com raios que piscam a tela
-- **Fog**: camadas de neblina horizontal se movendo
-- **Snow**: neve caindo com drift lateral
-- **None**: sem clima (30% de chance)
-
-O clima atual aparece no HUD junto com o período do dia.
-
-#### Game Clock
-O contador do jogo agora é formatado como tempo:
-- `00:15:32` (horas:minutos:segundos)
-- `5d 12:30:00` (quando passa de 24h)
-- `1Y 45D` (quando passa de 1 ano)
-- `1C 5Y` (séculos e anos)
-- `1M 2C` (milênios e séculos)
-
-#### Glassmorphism
-O painel lateral agora tem backdrop blur, fazendo ele parecer que flutua por cima do background.
-
-#### Botão com animação de relógio
-O botão principal agora tem uma animação sutil de ponteiro de relógio girando por cima, reforçando o tema de tempo.
-
-### Tech
-Tudo continua vanilla — HTML, CSS e JavaScript puros. Zero dependências. Novo arquivo `timeBackground.js` cuida de toda a lógica visual.
-
----
-*Feito com café e procrastinação.*
+#### Sol, Lua e Nuvens
+O céu agora tem elementos celestiais:
+- **Sol**: aparece durante o dia (morning, noon, afternoon), fazendo um arco pelo céu com glow dourado e raios girando suavemente
+- **Lua**: surge à noite, no amanhecer e no anoitecer, com formato de crescente e brilho azulado
+- **Nuvens**: mudam a cor e quantidade de acordo com o clima e período
+  - **Storm**: nuvens escuras, quase pretas, cheias e pesadas
+  - **Rain/Drizzle**: cinza médio, em mais quantidade
+  - **Dia limpo**: nuvens claras e esparsas
+  - **Noite**: quase invisíveis, sombrias
