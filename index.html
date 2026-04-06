@@ -4,12 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time After Time</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1 id="counter">0</h1>
-    <button id="btn">Click</button>
-    
+    <div class="app">
+
+        <!-- Center: Counter + Button -->
+        <div class="main">
+            <h1 id="gameTitle">Time After Time</h1>
+            <div id="counter">0</div>
+            <p class="subtitle">seconds slipping by</p>
+            <button id="btn" class="click-btn">
+                <span>One more</span>
+            </button>
+        </div>
+
+        <!-- Right: Upgrades Panel -->
+        <div class="side-panel">
+            <div class="panel-header">
+                <h2>Exchanges</h2>
+                <button id="saveBtn" class="save-btn">Save</button>
+            </div>
+            <div class="tabs" id="tabs">
+                <button class="tab active" data-tab="all">All</button>
+                <button class="tab" data-tab="auto">Auto Clicker</button>
+                <button class="tab" data-tab="click">Click Power</button>
+            </div>
+            <div class="upgrade-list" id="upgrade-list"></div>
+        </div>
+
+    </div>
+
+    <script src="Functions/playerData.js"></script>
+    <script src="Functions/save.js"></script>
+    <script src="Functions/upgrades.js"></script>
     <script src="main.js"></script>
 
 </body>
