@@ -13,4 +13,4 @@ Sol e lua agora atravessam a tela continuamente em arco — sem teleporte.
   - **Rain/Drizzle**: cinza médio, mais quantidade
   - **Dia limpo**: nuvens claras e esparsas
 
-O ciclo completo de travessia leva o equivalente a 6 trocas de período (18 min). A posição é atualizada a cada frame via `requestAnimationFrame` — movimento suave, nada de tp.
+O ciclo completo de travessia leva o equivalente a 6 trocas de período (18 min). A posição é atualizada a cada frame via `requestAnimationFrame` — movimento suave, nada de tp
